@@ -1,0 +1,1248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stock Simulator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .stock-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        .stock-table th, .stock-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+            vertical-align: top;
+        }
+        .stock-table th {
+            background-color: #3498db;
+            color: white;
+        }
+        .stock-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        .stock-table tr:hover {
+            background-color: #e8f4f8;
+            cursor: pointer;
+        }
+        .stock-table tr.selected {
+            background-color: #d4edda;
+        }
+        .portfolio {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #e8f4f8;
+            border-radius: 5px;
+        }
+        .portfolio-item {
+            background-color: white;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #ddd;
+        }
+        .portfolio-item-info {
+            flex: 1;
+        }
+        .portfolio-item-name {
+            font-weight: bold;
+            font-size: 1.1em;
+            color: #2c3e50;
+        }
+        .portfolio-item-details {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 4px;
+        }
+        .portfolio-item-action {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-left: 15px;
+        }
+        .btn-sell-all {
+            background-color: #f39c12;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85em;
+        }
+        .btn-sell-all:hover {
+            background-color: #e67e22;
+        }
+        .order-container {
+            background-color: #f8f9fa;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .order-container h4 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .order-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .order-item {
+            background-color: white;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .order-info {
+            flex: 1;
+        }
+        .order-symbol {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .order-details {
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 4px;
+        }
+        .order-buy { border-left-color: #27ae60; }
+        .order-sell { border-left-color: #e74c3c; }
+        .order-stop { border-left-color: #f39c12; }
+        .btn-cancel-order {
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 6px 10px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        .btn-cancel-order:hover {
+            background-color: #7f8c8d;
+        }
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+        .control-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .control-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .control-group .stock-symbol-display {
+            background-color: #e8f4f8;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .btn-buy-max {
+            background-color: #3498db;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+        }
+        .btn-buy-max:hover {
+            background-color: #2980b9;
+        }
+        .cost-estimate {
+            margin-top: 10px;
+            padding: 10px;
+            background-color: #fff3cd;
+            border-radius: 4px;
+            text-align: center;
+            font-weight: bold;
+            color: #856404;
+        }
+        .cost-estimate.empty {
+            background-color: #f8f9fa;
+            color: #6c757d;
+        }
+        .btn {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-buy {
+            background-color: #27ae60;
+            color: white;
+        }
+        .btn-sell {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .btnReset {
+            background-color: #e67e22;
+            color: white;
+        }
+        .btn-toggle {
+            background-color: #9b59b6;
+            color: white;
+        }
+        .message {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .cash-display {
+            font-size: 1.2em;
+            font-weight: bold;
+            text-align: center;
+            margin: 15px 0;
+            color: #2c3e50;
+        }
+        #chart-container {
+            margin: 20px 0;
+            display: none;
+        }
+        #chart-container canvas {
+            width: 100% !important;
+            height: 400px !important;
+        }
+        .portfolio-value-container {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .portfolio-value-container h3 {
+            margin-top: 0;
+            color: #2c3e50;
+        }
+        .portfolio-value-amount {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .positive { color: #27ae60; }
+        .negative { color: #e74c3c; }
+        
+        /* Mini chart styles */
+        .mini-chart-container {
+            display: inline-block;
+            width: 100%;
+            height: 40px;
+            margin-top: 5px;
+        }
+        .mini-chart-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+            max-width: 100px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Stock Simulator</h1>
+        
+        <div class="cash-display">
+            Your Cash: <span id="cash-display">$10,000.00</span>
+        </div>
+        
+        <div id="message-area"></div>
+        
+        <div class="controls">
+            <div class="control-group">
+                <label for="stock-symbol">Stock Symbol:</label>
+                <input type="text" id="stock-symbol" class="stock-symbol-display" placeholder="Select a stock to buy" readonly>
+            </div>
+            <div class="control-group">
+                <label for="shares">Number of Shares:</label>
+                <input type="number" id="shares" placeholder="Enter number of shares" min="1">
+            </div>
+            <div class="control-group">
+                <label>&nbsp;</label>
+                <button class="btn btn-buy-max" onclick="buyMax()">Buy Max</button>
+            </div>
+            <div class="control-group">
+                <label>&nbsp;</label>
+                <button class="btn btn-buy" onclick="buyStock()">Buy Stock</button>
+            </div>
+            <div class="control-group">
+                <label>&nbsp;</label>
+                <button class="btn btn-sell" onclick="sellStock()">Sell Stock</button>
+            </div>
+
+            <div class="control-group">
+                <label>&nbsp;</label>
+                <button class="btn btnReset" onclick="resetSimulator()">Reset</button>
+            </div>
+        </div>
+        
+        <div id="cost-estimate" class="cost-estimate empty">
+            Select a stock and enter shares to see cost estimate
+        </div>
+        
+        <div class="portfolio-value-container">
+            <h3>Portfolio Value <span onclick="togglePortfolioChart()" style="cursor: pointer; color: #3498db; text-decoration: underline; float: right;">View History</span></h3>
+            <div id="portfolio-value-display" class="portfolio-value-amount">$10,000.00</div>
+            <div id="portfolio-chart-container" style="margin-top: 15px; display: none;">
+                <canvas id="portfolioChart"></canvas>
+            </div>
+        </div>
+        
+        <div id="chart-container">
+            <div class="chart-controls" style="margin-bottom: 10px; display: flex; gap: 10px; align-items: center;">
+                <label for="chart-range">Time Range:</label>
+                <select id="chart-range" onchange="showStockHistory(selectedStockSymbol)" style="padding: 5px;">
+                    <option value="all" selected>All Time</option>
+                    <option value="300">300 Days</option>
+                    <option value="30">30 Days</option>
+                </select>
+                <button class="btn btnReset" onclick="closeStockChart()" style="padding: 5px 10px; font-size: 0.8em;">Close</button>
+            </div>
+            <h3>Price History for <span id="chart-symbol"></span></h3>
+            <canvas id="priceChart"></canvas>
+        </div>
+        
+        <div id="orders" class="order-container">
+            <h4>Active Orders</h4>
+            <div id="orders-content">No active orders</div>
+        </div>
+        
+        <div id="portfolio" class="portfolio">
+            <h3>Your Portfolio</h3>
+            <div id="portfolio-content">No stocks owned</div>
+        </div>
+        
+        <div id="trade-history" class="portfolio">
+            <h3>Trade History</h3>
+            <div id="trade-history-content">No trades yet</div>
+        </div>
+        
+        <table class="stock-table" id="stocks-table">
+            <thead>
+                <tr>
+                    <th>Company</th>
+                    <th>Symbol</th>
+                    <th>Current Price</th>
+                    <th>Change</th>
+                    <th>Trend</th>
+                </tr>
+            </thead>
+            <tbody id="stocks-body">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let priceChart = null;
+        let portfolioChart = null;
+        let selectedStockSymbol = null;
+        let stocksData = [];
+        let chartRegistry = {};
+        let selectedStockPrice = 0;
+        let activeOrders = [];
+        let nextOrderId = 1;
+        let portfolioHistory = [];
+        let costBasis = {};
+        let portfolioInputValues = {};
+        let isUpdating = false;
+        let showTradeHistory = false;
+        let tradeHistory = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const sharesInput = document.getElementById('shares');
+            // Store the initial value so we can restore it
+            sharesInput.addEventListener('input', function() {
+                lastSharesInputValue = sharesInput.value;
+                if (!isUpdating) {
+                    estimateCost();
+                }
+            });
+            
+            setInterval(updateStocks, 1000);
+            setInterval(checkOrders, 1000);
+            setInterval(updateTradeHistory, 5000);
+            updateStocks();
+        });
+
+        function updateStocks() {
+            if (isUpdating) return;
+            
+            fetch('/get_stocks')
+                .then(response => response.json())
+                .then(data => {
+                    isUpdating = true;
+                    stocksData = data.stocks;
+                    updateDisplay(data);
+                    if (priceChart && selectedStockSymbol) {
+                        let history = data.stocks.find(s => s.symbol === selectedStockSymbol)?.history || [];
+                        updateChart(history);
+                    }
+                    if (portfolioChart) {
+                        createPortfolioChart();
+                    }
+                    isUpdating = false;
+                })
+                .catch(error => {
+                    isUpdating = false;
+                    console.error('Error fetching stocks:', error);
+                });
+        }
+
+        function updateDisplay(data) {
+            const stocks = data.stocks;
+            const cash = data.cash;
+            const portfolio = data.portfolio;
+            
+            document.getElementById('cash-display').textContent = '$' + cash.toFixed(2);
+            
+            updateOrdersDisplay();
+            updatePortfolio(portfolio);
+            updatePortfolioValueDisplay(cash, portfolio);
+            
+            const stocksBody = document.getElementById('stocks-body');
+            
+            // Skip table updates if user is typing in shares input
+            if (document.activeElement === document.getElementById('shares')) {
+                return;
+            }
+            
+            // Create map of existing rows by symbol
+            const existingRows = {};
+            stocksBody.querySelectorAll('tr').forEach(row => {
+                const symbol = row.querySelector('td:nth-child(2)')?.textContent;
+                if (symbol) existingRows[symbol] = row;
+            });
+            
+            stocks.forEach(stock => {
+                // Check if row exists, update or create
+                let row = existingRows[stock.symbol];
+                const isNew = !row;
+                
+                if (isNew) {
+                    const history = stock.history || [];
+                    const startPrice = history.length > 0 ? history[0] : stock.price;
+                    const priceChange = stock.price - startPrice;
+                    const changePercent = (priceChange / startPrice) * 100;
+                    const isUp = priceChange >= 0;
+                    const changeClass = isUp ? 'positive' : 'negative';
+                    const changeSign = isUp ? '+' : '';
+                    const trendColor = isUp ? '#27ae60' : '#e74c3c';
+                    
+                    let trendHtml = '';
+                    if (history.length > 1) {
+                        trendHtml = `<div class="mini-chart-container"><canvas id="chart-${stock.symbol}"></canvas></div>`;
+                    }
+                    
+                    row = document.createElement('tr');
+                    row.className = selectedStockSymbol === stock.symbol ? 'selected' : '';
+                    row.onclick = () => selectStockForBuy(stock.symbol, stock.price);
+                    row.innerHTML = `
+                        <td>${stock.name}</td>
+                        <td>${stock.symbol}</td>
+                        <td>$${stock.price.toFixed(2)}</td>
+                        <td class="${changeClass}">${changeSign}${priceChange.toFixed(2)} (${changePercent.toFixed(2)}%)</td>
+                        <td>${trendHtml}</td>
+                    `;
+                    stocksBody.appendChild(row);
+                    
+                    if (history.length > 1) {
+                        drawMiniChart(`chart-${stock.symbol}`, history, trendColor);
+                    }
+                } else {
+                    // Update existing row with new prices
+                    row.querySelector('td:nth-child(3)').textContent = '$' + stock.price.toFixed(2);
+                    const history = stock.history || [];
+                    const startPrice = history.length > 0 ? history[0] : stock.price;
+                    const priceChange = stock.price - startPrice;
+                    const changePercent = (priceChange / startPrice) * 100;
+                    const isUp = priceChange >= 0;
+                    const changeClass = isUp ? 'positive' : 'negative';
+                    const changeSign = isUp ? '+' : '';
+                    const changeCell = row.querySelector('td:nth-child(4)');
+                    changeCell.textContent = `${changeSign}${priceChange.toFixed(2)} (${changePercent.toFixed(2)}%)`;
+                    changeCell.className = changeClass;
+                    
+                    // Update mini chart if it exists
+                    const chartId = `chart-${stock.symbol}`;
+                    const canvas = document.getElementById(chartId);
+                    if (canvas && history.length > 1) {
+                        drawMiniChart(chartId, history, isUp ? '#27ae60' : '#e74c3c');
+                    }
+                }
+            });
+        }
+
+        function updateOrderControls(symbol) {
+            const orderType = document.getElementById('order-type')?.value;
+            const limitInput = document.getElementById('limit-price-container');
+            const percentInput = document.getElementById('percent-container');
+            
+            if (orderType === 'limit' || orderType === 'stop-limit' || orderType === 'trailing-stop') {
+                if (orderType === 'trailing-stop') {
+                    if (percentInput) percentInput.style.display = 'block';
+                } else {
+                    if (limitInput) limitInput.style.display = 'block';
+                }
+            } else {
+                if (limitInput) limitInput.style.display = 'none';
+                if (percentInput) percentInput.style.display = 'none';
+            }
+        }
+
+        function updatePortfolio(portfolio) {
+            const portfolioContent = document.getElementById('portfolio-content');
+            
+            const stockSymbols = Object.keys(portfolio);
+            if (stockSymbols.length === 0) {
+                portfolioContent.innerHTML = 'No stocks owned';
+                return;
+            }
+            
+            const activeElement = document.activeElement;
+            if (activeElement && activeElement.id && activeElement.id.startsWith('sell-shares-')) {
+                return;
+            }
+            
+            let html = '';
+            stockSymbols.forEach(symbol => {
+                const shares = portfolio[symbol];
+                const stock = stocksData.find(s => s.symbol === symbol);
+                if (stock) {
+                    const currentValue = shares * stock.price;
+                    const avgCost = costBasis[symbol] || 0;
+                    const profitLoss = (stock.price - avgCost) * shares;
+                    const isProfit = profitLoss >= 0;
+                    const profitClass = isProfit ? 'positive' : 'negative';
+                    const profitSign = isProfit ? '+' : '';
+                    
+                    html += `
+                        <div class="portfolio-item">
+                            <div class="portfolio-item-info">
+                                <div class="portfolio-item-name">${symbol}</div>
+                                <div class="portfolio-item-details">
+                                    ${shares} shares | Avg Cost: $${avgCost.toFixed(2)} | Current: $${stock.price.toFixed(2)}
+                                </div>
+                                <div class="portfolio-item-details">
+                                    Total Value: $${currentValue.toFixed(2)} | P/L: <span class="${profitClass}">${profitSign}$${profitLoss.toFixed(2)}</span>
+                                </div>
+                            </div>
+                            <div class="portfolio-item-action">
+                                <input type="number" id="sell-shares-${symbol}" placeholder="Shares" min="1" max="${shares}" style="width: 80px; padding: 5px;">
+                                <button class="btn-sell-all" onclick="sellStockFromPortfolio('${symbol}')">Sell</button>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+            portfolioContent.innerHTML = html;
+        }
+
+        function drawMiniChart(canvasId, history, color) {
+            const canvas = document.getElementById(canvasId);
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width = canvas.offsetWidth || 100;
+            const height = canvas.height = canvas.offsetHeight || 40;
+            
+            // Use only last 60 points for sliding window
+            const data = history.length > 60 ? history.slice(-60) : history;
+            
+            if (data.length < 2) return;
+            
+            const minPrice = Math.min(...data);
+            const maxPrice = Math.max(...data);
+            const range = maxPrice - minPrice || 1;
+            
+            const points = data.map((price, i) => {
+                const x = (i / (data.length - 1)) * width;
+                const y = height - ((price - minPrice) / range) * height;
+                return { x, y };
+            });
+            
+            ctx.clearRect(0, 0, width, height);
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            
+            ctx.fillStyle = color + '33';
+            ctx.lineTo(width, height);
+            ctx.lineTo(0, height);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function closeStockChart() {
+            document.getElementById('chart-container').style.display = 'none';
+            selectedStockSymbol = null;
+        }
+
+        function showStockHistory(symbol) {
+            const rangeType = document.getElementById('chart-range').value || 'all';
+            fetch(`/get_stock_history/${symbol}/${rangeType}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    selectedStockSymbol = symbol;
+                    const history = data.history;
+                    const rangeName = rangeType === 'all' ? 'All Time' : 
+                                    rangeType === '300' ? '300 Days' : 
+                                    rangeType === '30' ? '30 Days' : '';
+                    document.getElementById('chart-symbol').textContent = symbol + ' ' + rangeName;
+                    document.getElementById('chart-container').style.display = 'block';
+                    createChart(history, symbol);
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching stock history:', error);
+                showMessage('Error fetching stock history', 'error');
+            });
+        }
+
+        function updateChart(history) {
+            if (priceChart && history) {
+                priceChart.data.labels = history.map((_, i) => i + 1);
+                priceChart.data.datasets[0].data = history;
+                priceChart.update();
+            }
+        }
+
+        function createChart(history, symbol) {
+            const ctx = document.getElementById('priceChart').getContext('2d');
+            
+            if (priceChart) {
+                priceChart.destroy();
+            }
+            
+            const labels = history.map((_, i) => i + 1);
+            
+            const startPrice = history[0];
+            const endPrice = history[history.length - 1];
+            const isUp = endPrice >= startPrice;
+            const lineColor = isUp ? '#27ae60' : '#e74c3c';
+            const areaColor = isUp ? 'rgba(39, 174, 96, 0.1)' : 'rgba(231, 76, 60, 0.1)';
+            
+            priceChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: symbol,
+                        data: history,
+                        borderColor: lineColor,
+                        backgroundColor: areaColor,
+                        borderWidth: 2,
+                        pointRadius: 2,
+                        fill: true,
+                        tension: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 500 },
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: { display: false },
+                        y: { display: false }
+                    },
+                    interaction: { mode: 'index', intersect: false }
+                }
+            });
+        }
+
+        function togglePortfolioChart() {
+            const container = document.getElementById('portfolio-chart-container');
+            if (container.style.display === 'none' || container.style.display === '') {
+                container.style.display = 'block';
+                createPortfolioChart();
+            } else {
+                container.style.display = 'none';
+            }
+        }
+
+        function updatePortfolioValueDisplay(cash, portfolio) {
+            let totalValue = cash;
+            for (const [symbol, shares] of Object.entries(portfolio)) {
+                const stock = stocksData.find(s => s.symbol === symbol);
+                if (stock) {
+                    totalValue += shares * stock.price;
+                }
+            }
+            document.getElementById('portfolio-value-display').textContent = '$' + totalValue.toFixed(2);
+            portfolioHistory.push(totalValue);
+            if (portfolioHistory.length > 50) {
+                portfolioHistory.shift();
+            }
+            return totalValue;
+        }
+
+        function createPortfolioChart() {
+            if (portfolioHistory.length < 2) return;
+            
+            const ctx = document.getElementById('portfolioChart').getContext('2d');
+            
+            if (portfolioChart) {
+                portfolioChart.destroy();
+            }
+            
+            const labels = portfolioHistory.map((_, i) => i + 1);
+            const values = portfolioHistory;
+            
+            const startValue = values[0];
+            const endValue = values[values.length - 1];
+            const isUp = endValue >= startValue;
+            const lineColor = isUp ? '#27ae60' : '#e74c3c';
+            const areaColor = isUp ? 'rgba(39, 174, 96, 0.1)' : 'rgba(231, 76, 60, 0.1)';
+            
+            portfolioChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Portfolio Value',
+                        data: values,
+                        borderColor: lineColor,
+                        backgroundColor: areaColor,
+                        borderWidth: 2,
+                        pointRadius: 2,
+                        fill: true,
+                        tension: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 500 },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return 'Portfolio Value: $' + context.raw.toFixed(2);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { display: false },
+                        y: { display: true, grid: { color: '#e0e0e0' } }
+                    },
+                    interaction: { mode: 'index', intersect: false }
+                }
+            });
+        }
+
+        function updateTradeHistory() {
+            fetch('/get_trade_history')
+                .then(response => response.json())
+                .then(data => {
+                    tradeHistory = data.trade_history;
+                    const historyContent = document.getElementById('trade-history-content');
+                    
+                    if (tradeHistory.length === 0) {
+                        historyContent.innerHTML = 'No trades yet';
+                        return;
+                    }
+                    
+                    let html = '<div style="max-height: 300px; overflow-y: auto;">';
+                    html += '<table class="stock-table" style="margin-bottom: 0;">';
+                    html += '<thead><tr><th>Day</th><th>Type</th><th>Symbol</th><th>Shares</th><th>Avg Cost</th><th>Price</th><th>Total</th><th>Profit/Loss</th></tr></thead><tbody>';
+                    
+                    tradeHistory.slice().reverse().forEach((trade, idx) => {
+                        const profitClass = trade.profit !== null && trade.profit >= 0 ? 'positive' : 'negative';
+                        const profitSign = trade.profit !== null && trade.profit >= 0 ? '+' : '';
+                        const profitDisplay = trade.profit !== null ? `${profitSign}$${trade.profit.toFixed(2)}` : '-';
+                        const avgCost = trade.avg_cost_basis !== undefined && trade.avg_cost_basis !== 0 ? `$${trade.avg_cost_basis.toFixed(2)}` : '-';
+                        
+                        html += `<tr>
+                            <td>${trade.day}</td>
+                            <td>${trade.type.toUpperCase()}</td>
+                            <td>${trade.symbol}</td>
+                            <td>${trade.shares}</td>
+                            <td>${avgCost}</td>
+                            <td>$${trade.price_per_share.toFixed(2)}</td>
+                            <td>$${trade.total.toFixed(2)}</td>
+                            <td class="${profitClass}">${profitDisplay}</td>
+                        </tr>`;
+                    });
+                    
+                    html += '</tbody></table></div>';
+                    historyContent.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error fetching trade history:', error);
+                });
+        }
+
+        function showMessage(message, type) {
+            const messageArea = document.getElementById('message-area');
+            messageArea.innerHTML = `<div class="message ${type}">${message}</div>`;
+            
+            setTimeout(() => {
+                messageArea.innerHTML = '';
+            }, 3000);
+        }
+
+        function resetSimulator() {
+            fetch('/reset_simulator', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(response => response.json())
+            .then(data => {
+                activeOrders = [];
+                nextOrderId = 1;
+                portfolioHistory = [];
+                tradeHistory = [];
+                showMessage('Simulator reset with seed: ' + data.seed, 'success');
+                updateStocks();
+            })
+            .catch(error => {
+                console.error('Error resetting simulator:', error);
+                showMessage('Error resetting simulator', 'error');
+            });
+        }
+
+        function checkOrders() {
+            if (activeOrders.length === 0) return;
+            
+            activeOrders = activeOrders.filter(order => {
+                const stock = stocksData.find(s => s.symbol === order.symbol);
+                if (!stock) return true;
+                
+                const currentPrice = stock.price;
+                const shouldExecute = checkOrderConditions(order, currentPrice);
+                
+                if (shouldExecute) {
+                    executeOrder(order, currentPrice);
+                    return false;
+                }
+                
+                return true;
+            });
+            
+            updateOrdersDisplay();
+        }
+
+        function checkOrderConditions(order, currentPrice) {
+            switch (order.type) {
+                case 'stop-loss':
+                    return currentPrice <= order.trigger_price;
+                case 'stop-limit':
+                    if (currentPrice >= order.trigger_price && !order.limit_hit) {
+                        order.limit_hit = true;
+                    }
+                    return order.limit_hit && currentPrice <= order.limit_price;
+                case 'limit':
+                    if (order.side === 'buy') {
+                        return currentPrice <= order.price;
+                    } else {
+                        return currentPrice >= order.price;
+                    }
+                case 'trailing-stop':
+                    if (!order.initial_price) {
+                        order.initial_price = currentPrice;
+                        order.trigger_price = currentPrice * (1 - order.trailing_percent / 100);
+                        return false;
+                    }
+                    if (currentPrice > order.initial_price) {
+                        order.initial_price = currentPrice;
+                        order.trigger_price = currentPrice * (1 - order.trailing_percent / 100);
+                    }
+                    return currentPrice <= order.trigger_price;
+                default:
+                    return false;
+            }
+        }
+
+        function executeOrder(order, currentPrice) {
+            let action;
+            let message;
+            
+            if (order.side === 'buy') {
+                const cost = currentPrice * order.quantity;
+                if (window.cash >= cost) {
+                    window.cash -= cost;
+                    if (order.symbol in window.portfolio) {
+                        window.portfolio[order.symbol] += order.quantity;
+                        window.costBasis[order.symbol] = (
+                            window.costBasis[order.symbol] * (window.portfolio[order.symbol] - order.quantity) + cost
+                        ) / window.portfolio[order.symbol];
+                    } else {
+                        window.portfolio[order.symbol] = order.quantity;
+                        window.costBasis[order.symbol] = currentPrice;
+                    }
+                    action = 'bought';
+                    message = `Stop triggered: ${order.side.toUpperCase()} ${order.quantity} shares of ${order.symbol} at $${currentPrice.toFixed(2)}`;
+                }
+            } else {
+                if (window.portfolio[order.symbol] >= order.quantity) {
+                    const revenue = currentPrice * order.quantity;
+                    window.cash += revenue;
+                    window.portfolio[order.symbol] -= order.quantity;
+                    if (window.portfolio[order.symbol] === 0) {
+                        delete window.portfolio[order.symbol];
+                        delete window.costBasis[order.symbol];
+                    }
+                    action = 'sold';
+                    message = `Stop triggered: ${order.side.toUpperCase()} ${order.quantity} shares of ${order.symbol} at $${currentPrice.toFixed(2)}`;
+                }
+            }
+            
+            if (action) {
+                removeFromOrders(order.id);
+                showMessage(message, 'success');
+                updateStocks();
+            }
+        }
+
+        function addToOrders(order) {
+            order.id = nextOrderId++;
+            activeOrders.push(order);
+            updateOrdersDisplay();
+        }
+
+        function removeFromOrders(orderId) {
+            activeOrders = activeOrders.filter(o => o.id !== orderId);
+            updateOrdersDisplay();
+        }
+
+        function updateOrdersDisplay() {
+            const ordersContent = document.getElementById('orders-content');
+            
+            if (activeOrders.length === 0) {
+                ordersContent.innerHTML = 'No active orders';
+                return;
+            }
+            
+            let html = '<ul class="order-list">';
+            activeOrders.forEach(order => {
+                const sideClass = order.side === 'buy' ? 'order-buy' : 'order-sell';
+                const typeIcon = order.type === 'stop-loss' ? '🛑' :
+                               order.type === 'stop-limit' ? '⚠️' :
+                               order.type === 'limit' ? '🎯' : '📈';
+                
+                html += `
+                    <li class="order-item ${sideClass}">
+                        <div class="order-info">
+                            <div class="order-symbol">${typeIcon} ${order.symbol} ${order.side.toUpperCase()}</div>
+                            <div class="order-details">
+                                ${order.type === 'limit' ? 'Limit' : order.type.toUpperCase()}: 
+                                ${order.type === 'trailing-stop' ? order.trailing_percent + '%' : 
+                                  (order.type === 'stop-limit' ? `$${order.trigger_price.toFixed(2)} → $${order.limit_price.toFixed(2)}` :
+                                  `$${order.trigger_price || order.price.toFixed(2)}`)} 
+                                |Qty: ${order.quantity}
+                            </div>
+                        </div>
+                        <button class="btn-cancel-order" onclick="cancelOrder(${order.id})">Cancel</button>
+                    </li>
+                `;
+            });
+            html += '</ul>';
+            ordersContent.innerHTML = html;
+        }
+
+        function sellStockFromPortfolio(symbol) {
+            const input = document.getElementById(`sell-shares-${symbol}`);
+            const shares = parseInt(input.value);
+            
+            if (!shares || shares <= 0) {
+                showMessage('Please enter a valid number of shares', 'error');
+                return;
+            }
+            
+            if (window.portfolio[symbol] < shares) {
+                showMessage('Insufficient shares to sell', 'error');
+                return;
+            }
+            
+            fetch('/sell_stock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symbol, shares })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showMessage(data.message, 'success');
+                    updateStocks();
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error selling stock:', error);
+                showMessage('Error selling stock', 'error');
+            });
+        }
+
+        function cancelOrder(orderId) {
+            removeFromOrders(orderId);
+            fetch('/cancel_order', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ order_id: orderId })
+            })
+            .then(() => {})
+            .catch(error => {
+                console.error('Error cancelling order:', error);
+            });
+        }
+
+        function setStopLoss(symbol, shares, triggerPrice) {
+            addToOrders({
+                id: 0,
+                symbol: symbol,
+                side: 'sell',
+                type: 'stop-loss',
+                trigger_price: parseFloat(triggerPrice),
+                quantity: parseInt(shares)
+            });
+            showMessage(`Stop-loss set: Sell ${shares} shares of ${symbol} at $${triggerPrice}`, 'success');
+        }
+
+        function setStopLimit(symbol, shares, triggerPrice, limitPrice) {
+            addToOrders({
+                id: 0,
+                symbol: symbol,
+                side: 'sell',
+                type: 'stop-limit',
+                trigger_price: parseFloat(triggerPrice),
+                limit_price: parseFloat(limitPrice),
+                quantity: parseInt(shares)
+            });
+            showMessage(`Stop-limit set: Sell ${shares} shares of ${symbol} at $${triggerPrice} (limit $${limitPrice})`, 'success');
+        }
+
+        function setLimit(symbol, shares, limitPrice, side) {
+            addToOrders({
+                id: 0,
+                symbol: symbol,
+                side: side,
+                type: 'limit',
+                price: parseFloat(limitPrice),
+                quantity: parseInt(shares)
+            });
+            showMessage(`Limit ${side} set: ${side} ${shares} shares of ${symbol} at $${limitPrice}`, 'success');
+        }
+
+        function setTrailingStop(symbol, shares, trailingPercent) {
+            addToOrders({
+                id: 0,
+                symbol: symbol,
+                side: 'sell',
+                type: 'trailing-stop',
+                trailing_percent: parseFloat(trailingPercent),
+                quantity: parseInt(shares)
+            });
+            showMessage(`Trailing-stop set: Sell ${shares} shares of ${symbol} (${trailingPercent}% trailing)`, 'success');
+        }
+
+        function selectStockForBuy(symbol, price) {
+            selectedStockSymbol = symbol;
+            selectedStockPrice = price;
+            document.getElementById('stock-symbol').value = symbol;
+            
+            const stocksTable = document.getElementById('stocks-table');
+            const rows = stocksTable.querySelectorAll('tr');
+            rows.forEach(row => {
+                if (row.querySelector('td:nth-child(2)')?.textContent === symbol) {
+                    row.classList.add('selected');
+                } else {
+                    row.classList.remove('selected');
+                }
+            });
+            
+            estimateCost();
+            showStockHistory(symbol);
+        }
+
+        function estimateCost() {
+            const sharesInput = document.getElementById('shares');
+            const costEstimate = document.getElementById('cost-estimate');
+            const shares = parseInt(sharesInput.value);
+            
+            if (!selectedStockSymbol || isNaN(shares) || shares <= 0) {
+                costEstimate.className = 'cost-estimate empty';
+                costEstimate.textContent = 'Select a stock and enter shares to see cost estimate';
+                return;
+            }
+            
+            const cost = selectedStockPrice * shares;
+            costEstimate.className = 'cost-estimate';
+            costEstimate.innerHTML = `Cost to buy ${shares} shares of ${selectedStockSymbol}: <span style="font-size: 1.2em">$${cost.toFixed(2)}</span>`;
+        }
+
+        function buyMax() {
+            if (!selectedStockSymbol) {
+                showMessage('Please select a stock first', 'error');
+                return;
+            }
+            
+            if (stocksData.length === 0) {
+                showMessage('No stock data available', 'error');
+                return;
+            }
+            
+            const stock = stocksData.find(s => s.symbol === selectedStockSymbol);
+            if (!stock) {
+                showMessage('Could not find stock data', 'error');
+                return;
+            }
+            
+            const currentCash = document.getElementById('cash-display').textContent.replace('$', '').replace(',', '');
+            const maxShares = Math.floor(parseFloat(currentCash) / stock.price);
+            
+            if (maxShares <= 0) {
+                showMessage('Insufficient funds to buy any shares', 'error');
+                return;
+            }
+            
+            const sharesInput = document.getElementById('shares');
+            sharesInput.value = maxShares;
+            sharesInput.focus();
+            estimateCost();
+            showMessage(`Max shares (${maxShares}) of ${selectedStockSymbol} ready to buy`, 'success');
+        }
+
+        function buyStock() {
+            const symbol = document.getElementById('stock-symbol').value.toUpperCase();
+            const shares = parseInt(document.getElementById('shares').value);
+            
+            if (!symbol || !shares || shares <= 0) {
+                showMessage('Please enter a valid stock symbol and number of shares', 'error');
+                return;
+            }
+            
+            fetch('/buy_stock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symbol, shares })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showMessage(data.message, 'success');
+                    const symbol = document.getElementById('stock-symbol').value.toUpperCase();
+                    const shares = parseInt(document.getElementById('shares').value);
+                    const stock = stocksData.find(s => s.symbol === symbol);
+                    if (stock) {
+                        const currentShares = data.portfolio[symbol] || shares;
+                        if (symbol in costBasis) {
+                            const oldShares = currentShares - shares;
+                            costBasis[symbol] = (costBasis[symbol] * oldShares + stock.price * shares) / currentShares;
+                        } else {
+                            costBasis[symbol] = stock.price;
+                        }
+                    }
+                    updateStocks();
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error buying stock:', error);
+                showMessage('Error buying stock', 'error');
+            });
+        }
+
+        function sellStock() {
+            const symbol = document.getElementById('stock-symbol').value.toUpperCase();
+            const shares = parseInt(document.getElementById('shares').value);
+            
+            if (!symbol || !shares || shares <= 0) {
+                showMessage('Please enter a valid stock symbol and number of shares', 'error');
+                return;
+            }
+            
+            fetch('/sell_stock', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ symbol, shares })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showMessage(data.message, 'success');
+                    const symbol = document.getElementById('stock-symbol').value.toUpperCase();
+                    if (data.portfolio[symbol] === undefined) {
+                        delete costBasis[symbol];
+                    } else {
+                        const soldShares = shares;
+                        const remainingShares = data.portfolio[symbol];
+                        if (remainingShares === 0) {
+                            delete costBasis[symbol];
+                        }
+                    }
+                    updateStocks();
+                } else {
+                    showMessage(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error selling stock:', error);
+                showMessage('Error selling stock', 'error');
+            });
+        }
+    </script>
+</body>
+</html>
